@@ -1156,51 +1156,61 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
   // Make sure line item count is aggregated.
   $query->groupBy('l.order_id');
 
-
   if (!empty($filters['range_select'])) {
     switch ($filters['range_select']) {
       case 'all':
         break;
+
       case 'today':
         $start_date = strtotime('midnight');
         $end_date = strtotime('tomorrow');
         break;
+
       case 'yesterday':
         $start_date = strtotime('yesterday');
         $end_date = strtotime('midnight');
         break;
+
       case 'current_week':
         $start_date = strtotime('sunday last week');
         $end_date = strtotime('tomorrow');
         break;
+
       case 'current_month':
         $start_date = strtotime(date('Y-m-1'));
         $end_date = strtotime('tomorrow');
         break;
+
       case 'ytd':
         $start_date = strtotime('January 1st');
         $end_date = strtotime('tomorrow');
         break;
+
       case 'last_week':
         $start_date = strtotime('sunday last week -1 week');
         $end_date = strtotime('sunday last week');
         break;
+
       case 'last_month':
         $start_date = strtotime(date('Y-m-1') . ' -1 month');
         $end_date = strtotime(date('Y-m-1'));
         break;
+
       case 'last_year_today':
         $start_date = strtotime('midnight -1 year');
         $end_date = strtotime('tomorrow -1 year');
         break;
+
       case 'last_year_week':
         $start_date = strtotime('-1 year sunday last week ');
         $end_date = strtotime('-1 year sunday');
         break;
+
       case 'last_year_month':
         $start_date = strtotime(date('Y-m-1') . ' -1 year');
         $end_date = strtotime(date('Y-m-1') . ' -1 year +1 month');
         break;
+
       case 'custom':
         $start_date = strtotime($filters['start_date']);
         // Add a day to make end date inclusive.
@@ -1208,7 +1218,7 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
         break;
     }
 
-    if(isset($start_date, $end_date)) {
+    if (isset($start_date, $end_date)) {
       $query->condition('completed', $start_date, '>=');
       $query->condition('completed', $end_date, '<');
     }
@@ -1459,7 +1469,7 @@ function commerce_pos_report_sales_report($form, &$form_state) {
  */
 function commerce_pos_report_sales_report_submit($form, &$form_state) {
   $query_params = array_merge(drupal_get_query_parameters(), $form_state['values']['filters'], $form_state['values']['options']);
-  if(!empty($query_params['range_select']) && $query_params['range_select'] !== 'custom') {
+  if (!empty($query_params['range_select']) && $query_params['range_select'] !== 'custom') {
     unset($query_params['start_date'], $query_params['end_date']);
   }
   $form_state['redirect'] = array(current_path(), array('query' => $query_params));
