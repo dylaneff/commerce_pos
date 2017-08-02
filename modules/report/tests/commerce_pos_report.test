@@ -136,7 +136,7 @@ class CommercePosReportTestCase extends CommercePosBaseTestCase {
         // For Debit, we'll make it so that overall balance of transactions will
         // be negative. I.e. the returned amount will be more than the sales.
         if ($payment_method == 'commerce_pos_payment_debit' && $type == CommercePosService::TRANSACTION_TYPE_RETURN) {
-          $amount = -20000;
+          $amount = 20000;
         }
         else {
           $amount = 5000;
@@ -149,9 +149,21 @@ class CommercePosReportTestCase extends CommercePosBaseTestCase {
         $last_amount = $amount;
 
         $transaction = $this->createDummyTransaction($type, $this->privilegedUser->uid);
-        $transaction->doAction('addProduct', $dummy_product);
+
         $transaction->registerId = $register->register_id;
-        $this->createDummyPayment($transaction, $payment_method, $amount);
+
+        if ($type == CommercePosService::TRANSACTION_TYPE_RETURN) {
+          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'comerce_pos_return');
+          $this->createDummyPayment($transaction, $payment_method, -$amount);
+        }
+        elseif ($type == CommercePosService::TRANSACTION_TYPE_EXCHANGE) {
+          $transaction->doAction('addProduct', $dummy_product);
+          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'comerce_pos_return');
+        }
+        else {
+          $transaction->doAction('addProduct', $dummy_product);
+          $this->createDummyPayment($transaction, $payment_method, $amount);
+        }
 
         if (!isset($generated_totals[$payment_method][$type])) {
           $generated_totals[$payment_method][$type] = 0;
