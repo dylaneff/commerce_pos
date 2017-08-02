@@ -185,7 +185,6 @@ class CommercePosReportTestCase extends CommercePosBaseTestCase {
           $generated_totals[$payment_method][$type] += $amount;
         }
 
-
         $transaction->doAction('saveOrder');
         $transaction->doAction('save');
         $transaction->doAction('completeTransaction');
