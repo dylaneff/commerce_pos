@@ -153,12 +153,12 @@ class CommercePosReportTestCase extends CommercePosBaseTestCase {
         $transaction->registerId = $register->register_id;
 
         if ($type == CommercePosService::TRANSACTION_TYPE_RETURN) {
-          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'comerce_pos_return');
+          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'commerce_pos_return');
           $this->createDummyPayment($transaction, $payment_method, -$amount);
         }
         elseif ($type == CommercePosService::TRANSACTION_TYPE_EXCHANGE) {
           $transaction->doAction('addProduct', $dummy_product);
-          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'comerce_pos_return');
+          $transaction->doAction('addProduct', $dummy_product, 1, TRUE, NULL, 'commerce_pos_return');
         }
         else {
           $transaction->doAction('addProduct', $dummy_product);
