@@ -165,7 +165,7 @@ function commerce_pos_report_end_of_day($form, &$form_state) {
       $payment_method = commerce_payment_method_load($payment_method_id);
       $row = array();
 
-      $expected_amount = $amounts[CommercePosService::TRANSACTION_TYPE_SALE] - $amounts[CommercePosService::TRANSACTION_TYPE_RETURN];
+      $expected_amount = $amounts[CommercePosService::TRANSACTION_TYPE_SALE] + $amounts[CommercePosService::TRANSACTION_TYPE_RETURN] + $amounts[CommercePosService::TRANSACTION_TYPE_EXCHANGE];
       $input_prefix = '';
       $input_suffix = '';
 
@@ -186,7 +186,7 @@ function commerce_pos_report_end_of_day($form, &$form_state) {
 
           // The change amount reflects the change we GAVE BACK, so we have to
           // add it to the expected amount of cash.
-          $expected_amount += ($change_amounts[CommercePosService::TRANSACTION_TYPE_SALE] - $change_amounts[CommercePosService::TRANSACTION_TYPE_RETURN]);
+          $expected_amount += ($change_amounts[CommercePosService::TRANSACTION_TYPE_SALE] + $change_amounts[CommercePosService::TRANSACTION_TYPE_RETURN] + $change_amounts[CommercePosService::TRANSACTION_TYPE_EXCHANGE]);
           unset($change_amounts);
         }
 
@@ -395,6 +395,7 @@ function commerce_pos_report_get_totals($date_filter, $register_id) {
         $totals[$currency_code][$pos_method['id']] = array(
           CommercePosService::TRANSACTION_TYPE_SALE => 0,
           CommercePosService::TRANSACTION_TYPE_RETURN => 0,
+          CommercePosService::TRANSACTION_TYPE_EXCHANGE => 0,
         );
       }
       $transaction_summary[$pos_method['id']] = array();
@@ -410,6 +411,7 @@ function commerce_pos_report_get_totals($date_filter, $register_id) {
     if (!isset($totals[$row->commerce_order_total_currency_code][$row->payment_method])) {
       $totals[$row->commerce_order_total_currency_code][$row->payment_method] = array(
         CommercePosService::TRANSACTION_TYPE_SALE => 0,
+        CommercePosService::TRANSACTION_TYPE_RETURN => 0,
         CommercePosService::TRANSACTION_TYPE_RETURN => 0,
       );
     }
