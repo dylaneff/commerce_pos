@@ -234,8 +234,8 @@ function commerce_pos_transaction_form($form, &$form_state) {
     $form['product_search']['onboarding_text'] = array(
       '#type' => 'markup',
       '#markup' => '<div class="commerce-pos-search-onboarding-message">' .
-        t("<strong>Start your transaction:</strong> scan barcode or use product search")
-       . '</div>',
+      t("<strong>Start your transaction:</strong> scan barcode or use product search")
+      . '</div>',
     );
   }
 
@@ -909,8 +909,8 @@ function commerce_pos_build_line_item_form_element(EntityMetadataWrapper $line_i
       ));
       $form['out_of_stock_override_modal']['modal']['message'] = array(
         '#markup' => '<div id="out-of-stock-override-confirm-question">'
-          . t('This product does not have any stock. Do you still want to add this item to the order?')
-          . '</div>',
+        . t('This product does not have any stock. Do you still want to add this item to the order?')
+        . '</div>',
       );
 
       // Display a override button to proceed with adding the item to the
@@ -930,7 +930,7 @@ function commerce_pos_build_line_item_form_element(EntityMetadataWrapper $line_i
       );
 
       // Display a remove button to remove the item from the order. We're
-      //  just copying the same behavior for the generic 'remove' button.
+      // just copying the same behavior for the generic 'remove' button.
       $form['out_of_stock_override_modal']['modal']['out_of_stock_override_confirm_no_button'] = array(
         '#type' => 'submit',
         '#value' => 'Remove',

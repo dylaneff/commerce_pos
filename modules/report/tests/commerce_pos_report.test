@@ -131,12 +131,12 @@ class CommercePosReportTestCase extends CommercePosBaseTestCase {
     foreach ($payment_methods as $payment_method) {
       for ($i = 0; $i < 20; $i++) {
         // Generally we want sales to outnumber returns.
-        $type = $i < 15 ? CommercePosService::TRANSACTION_TYPE_SALE : CommercePosService::TRANSACTION_TYPE_RETURN;
+        $type = $i < 10 ? CommercePosService::TRANSACTION_TYPE_SALE : ($i < 15) ? CommercePosService::TRANSACTION_TYPE_RETURN : CommercePosService::TRANSACTION_TYPE_EXCHANGE;
 
         // For Debit, we'll make it so that overall balance of transactions will
         // be negative. I.e. the returned amount will be more than the sales.
         if ($payment_method == 'commerce_pos_payment_debit' && $type == CommercePosService::TRANSACTION_TYPE_RETURN) {
-          $amount = 20000;
+          $amount = -20000;
         }
         else {
           $amount = 5000;

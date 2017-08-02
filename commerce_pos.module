@@ -869,8 +869,6 @@ function commerce_pos_get_product_display_nid($product_id) {
  *   The entity metadata wrapper for the order.
  * @param string $field_name
  *   The name of the price field to format.
- * @param bool $return
- *   A boolean indicating whether this price is being used in a return or not.
  * @param bool $print
  *   A boolean indicating if this price is being displayed in a print view.
  *

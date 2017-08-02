@@ -186,9 +186,9 @@ class CommercePosTransactionBaseActions extends CommercePosTransactionBase imple
 
     rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
 
-    // If this is a return line item negate the price
-    if($line_item_type == 'commerce_pos_return') {
-      if(empty($price)) {
+    // If this is a return line item negate the price.
+    if ($line_item_type == 'commerce_pos_return') {
+      if (empty($price)) {
         $price = $line_item_wrapper->commerce_unit_price->amount->value() * -1;
       }
       else {
