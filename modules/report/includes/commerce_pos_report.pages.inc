@@ -412,7 +412,7 @@ function commerce_pos_report_get_totals($date_filter, $register_id) {
       $totals[$row->commerce_order_total_currency_code][$row->payment_method] = array(
         CommercePosService::TRANSACTION_TYPE_SALE => 0,
         CommercePosService::TRANSACTION_TYPE_RETURN => 0,
-        CommercePosService::TRANSACTION_TYPE_RETURN => 0,
+        CommercePosService::TRANSACTION_TYPE_EXCHANGE => 0,
       );
     }
 
