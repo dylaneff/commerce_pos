@@ -401,5 +401,10 @@ function commerce_pos_report_payment_types($order_id) {
     }
   }
 
+  // If no payments were found we are likely dealing with a 0 balance exchange.
+  if (empty($payment_types)) {
+    $payment_types[] = t('None');
+  }
+
   return implode(', ', $payment_types);
 }

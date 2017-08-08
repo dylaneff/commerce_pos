@@ -1333,3 +1333,14 @@ function commerce_pos_commerce_currency_format($amount, $currency_code, $object 
   $suffix = ($amount < 0) ? ')' : '';
   return $prefix . commerce_currency_format(abs($amount), $currency_code, $object = NULL, $convert = TRUE) . $suffix;
 }
+
+/**
+ * Get all of the product line item types that are not pos return items.
+ */
+function commerce_pos_sale_product_line_item_types() {
+  $sale_line_item_types = commerce_product_line_item_types();
+  if (($key = array_search('commerce_pos_return', $sale_line_item_types)) !== FALSE) {
+    unset($sale_line_item_types[$key]);
+  }
+  return $sale_line_item_types;
+}

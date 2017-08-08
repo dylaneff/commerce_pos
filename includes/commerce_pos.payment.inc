@@ -260,7 +260,7 @@ function commerce_pos_payment($form, &$form_state) {
     $form['balance']['actions']['finish'] = array(
       '#type' => 'submit',
       '#value' => t('Finish'),
-      '#disabled' => $order_balance['amount'] > 0,
+      '#disabled' => $order_balance['amount'] != 0,
       '#validate' => array('commerce_pos_payment_validate'),
       '#submit' => array('commerce_pos_payment_finish'),
       '#attributes' => array(

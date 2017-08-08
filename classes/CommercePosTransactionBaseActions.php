@@ -647,10 +647,7 @@ class CommercePosTransactionBaseActions extends CommercePosTransactionBase imple
     $sale_found = FALSE;
     $return_found = FALSE;
 
-    $sale_line_item_types = commerce_product_line_item_types();
-    if (($key = array_search('commerce_pos_return', $sale_line_item_types)) !== FALSE) {
-      unset($sale_line_item_types[$key]);
-    }
+    $sale_line_item_types = commerce_pos_sale_product_line_item_types();
 
     foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
       if (in_array($line_item_wrapper->getBundle(), $sale_line_item_types)) {

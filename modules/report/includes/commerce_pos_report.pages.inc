@@ -698,6 +698,7 @@ function commerce_pos_report_journal_role($form, &$form_state) {
 
   $payment_filter_options = array(
     'all' => t('All'),
+    'none' => t('None'),
   );
 
   foreach (commerce_pos_get_payment_methods() as $key => $payment_method) {
@@ -854,7 +855,7 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
   $query->addField('cashier', 'name', 'cashier');
 
   // Payment transaction data.
-  $query->join('commerce_payment_transaction', 'pt', 'pt.order_id = t.order_id');
+  $query->leftJoin('commerce_payment_transaction', 'pt', 'pt.order_id = t.order_id');
   $query->fields('pt', array('transaction_id', 'payment_method'));
 
   // Join order data.
@@ -873,12 +874,10 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
   ));
 
   // Join line item data.
+  $sale_line_items = commerce_pos_sale_product_line_item_types();
   $query->join('commerce_line_item', 'l', 'l.order_id = t.order_id');
-  $query->addField('l', 'quantity');
-  $query->addExpression('COUNT(DISTINCT l.line_item_id)', 'item_count');
-
-  $line_item_types = commerce_product_line_item_types();
-  $query->condition('l.type', $line_item_types, 'IN');
+  $query->addExpression('SUM(CASE WHEN l.type = \'commerce_pos_return\' THEN l.quantity ELSE null END)', 'return_count');
+  $query->addExpression('SUM(CASE WHEN l.type IN (\'' . implode('\', \'', $sale_line_items) . '\') THEN l.quantity ELSE null END)', 'purchase_count');
 
   // Get the totals for each payment type.
   foreach ($active_payment_methods as $key => $payment_method) {
@@ -902,12 +901,15 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
     $query->condition('completed', strtotime('+1 day', $date_timestamp), '<');
   }
 
-  if (!empty($filters['payment_type']) && $filters['payment_type'] != 'all') {
+  if (!empty($filters['payment_type']) && $filters['payment_type'] == 'none') {
+    $query->isNull('pt.payment_method');
+  }
+  elseif (!empty($filters['payment_type']) && $filters['payment_type'] != 'all') {
     // Let's also add the commerce_pos_change in our payment type condition,
     // so we can grab how much change was given back.
     $payment_types_array = [
       $filters['payment_type'],
-      'commerce_pos_change'
+      'commerce_pos_change',
     ];
     $query->condition('pt.payment_method', $payment_types_array, 'IN');
   }
@@ -926,19 +928,6 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
   if ($result->rowCount() > 0) {
     foreach ($result as $row) {
       $table_row = array();
-
-      $return_count = 0;
-      $purchase_count = 0;
-
-      switch ($row->type) {
-        case CommercePosService::TRANSACTION_TYPE_RETURN:
-          $return_count = (int) $row->quantity;
-          break;
-
-        default:
-          $purchase_count = (int) $row->quantity;
-          break;
-      }
 
       // Build order ID link.
       $table_row[] = l($row->order_id, '/admin/commerce/pos/report/ajax/order-details/' . $row->order_id, array(
@@ -960,10 +949,10 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
       $table_row[] = !empty($row->customer_mail) ? $row->customer_mail : t('Anonymous');
 
       // Purchased.
-      $table_row[] = $purchase_count;
+      $table_row[] = (int) $row->purchase_count;
 
       // Returned.
-      $table_row[] = $return_count;
+      $table_row[] = (int) $row->return_count;
 
       // Discount flag.
       $order_total_data = unserialize($row->commerce_order_total_data);
@@ -1027,8 +1016,8 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
         ),
       );
 
-      $totals['purchased'] += $purchase_count;
-      $totals['returned'] += $return_count;
+      $totals['purchased'] += (int) $row->purchase_count;
+      $totals['returned'] += (int) $row->return_count;
 
       if (!isset($totals['order_total'][$row->commerce_order_total_currency_code])) {
         $totals['order_total'][$row->commerce_order_total_currency_code] = $row->commerce_order_total_amount;
@@ -1130,7 +1119,7 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
   $query->addField('cashier', 'name', 'cashier');
 
   // Payment transaction data.
-  $query->join('commerce_payment_transaction', 'pt', 'pt.order_id = t.order_id');
+  $query->leftJoin('commerce_payment_transaction', 'pt', 'pt.order_id = t.order_id');
   $query->fields('pt', array('transaction_id'));
 
   // Join order data.
@@ -1149,8 +1138,10 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
   ));
 
   // Join line item data.
+  $sale_line_items = commerce_pos_sale_product_line_item_types();
   $query->join('commerce_line_item', 'l', 'l.order_id = t.order_id');
-  $query->addField('l', 'quantity');
+  $query->addExpression('SUM(CASE WHEN l.type = \'commerce_pos_return\' THEN l.quantity ELSE null END)', 'return_count');
+  $query->addExpression('SUM(CASE WHEN l.type IN (\'' . implode('\', \'', $sale_line_items) . '\') THEN l.quantity ELSE null END)', 'purchase_count');
 
   $line_item_types = commerce_product_line_item_types();
   $query->condition('l.type', $line_item_types, 'IN');
@@ -1192,7 +1183,7 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
   );
 
   if ($result->rowCount() > 0) {
-    $report = sales_process_data($result);
+    $report = commerce_pos_report_sales_process_data($result);
     foreach ($report as $cashier_transactions) {
       $table_row              = array();
       $transactions           = $cashier_transactions['cashier']['transactions'];
@@ -1348,11 +1339,9 @@ function commerce_pos_report_sales_report_submit($form, &$form_state) {
 /**
  * Helper function for Sales table to process data.
  */
-function sales_process_data($result) {
+function commerce_pos_report_sales_process_data($result) {
   $table_row = array();
   foreach ($result as $row) {
-    $return_count = 0;
-    $purchase_count = 0;
     $transactions = 1;
     $cashier_id = $row->cashier_id;
 
@@ -1369,19 +1358,7 @@ function sales_process_data($result) {
       );
     }
 
-    switch ($row->type) {
-      case CommercePosService::TRANSACTION_TYPE_RETURN:
-        $return_count = $row->quantity;
-        // Order total.
-        $table_row[$cashier_id]['transaction']['net_sales'] -= $row->commerce_order_total_amount;
-        break;
-
-      default:
-        $purchase_count = $row->quantity;
-        // Order total.
-        $table_row[$cashier_id]['transaction']['net_sales'] += $row->commerce_order_total_amount;
-        break;
-    }
+    $table_row[$cashier_id]['transaction']['net_sales'] += $row->commerce_order_total_amount;
 
     // Build order ID link.
     $table_row[$cashier_id]['cashier']['id'] = $cashier_id;
@@ -1390,9 +1367,9 @@ function sales_process_data($result) {
     // Number of transactions.
     $table_row[$cashier_id]['cashier']['transactions'] += $transactions;
     // Purchased.
-    $table_row[$cashier_id]['transaction']['purchase_count'] += $purchase_count;
+    $table_row[$cashier_id]['transaction']['purchase_count'] += (int) $row->purchase_count;
     // Returned.
-    $table_row[$cashier_id]['transaction']['return_count'] += $return_count;
+    $table_row[$cashier_id]['transaction']['return_count'] += (int) $row->return_count;
 
     // Discount flag.
     $table_row[$cashier_id]['cashier']['currency_code'] = $row->commerce_order_total_currency_code;
