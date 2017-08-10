@@ -98,7 +98,7 @@ function commerce_pos_gratuity_commerce_pos_balance_summary_row_info_alter(&$row
  */
 function commerce_pos_gratuity_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
-    case 'commerce_pos_sale_payment':
+    case 'commerce_pos_payment':
       _commerce_pos_gratuity_payment_form_alter($form, $form_state);
       break;
 
@@ -162,7 +162,6 @@ function _commerce_pos_gratuity_payment_form_alter(&$form, $form_state) {
       );
     }
   }
-
 
   // Show the add gratuity button.
   if (!empty($form['balance']['actions'])) {

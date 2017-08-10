@@ -374,13 +374,15 @@ function commerce_payment_commerce_pos_balance_summary_row_info($totals, $order)
   if ($order) {
     // @TODO: Fix for when there's a FALSE $balance.
     $balance = commerce_payment_order_balance($order, $totals);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $original_balance = $order_wrapper->commerce_order_total->amount->value();
   }
   if (count($totals) == 0) {
     // Add a row for the remaining balance on the order.
     if ($order) {
       $order_to_pay_classes = array('order-to-pay');
 
-      if ($balance['amount'] > 0) {
+      if ($balance['amount'] > 0 && $original_balance > 0 || $balance['amount'] < 0 && $original_balance < 0) {
         $order_to_pay_classes[] = 'order-to-pay-positive';
       }
       else {
@@ -394,7 +396,7 @@ function commerce_payment_commerce_pos_balance_summary_row_info($totals, $order)
             'class' => array('label'),
           ),
           array(
-            'data' => commerce_pos_commerce_currency_format($balance['amount'] > 0 ? $balance['amount'] : 0, $balance['currency_code']),
+            'data' => commerce_pos_commerce_currency_format($balance['amount'], $balance['currency_code']),
             'class' => array('balance'),
           ),
         ),
@@ -402,7 +404,7 @@ function commerce_payment_commerce_pos_balance_summary_row_info($totals, $order)
         'weight' => 10,
       );
 
-      if ($balance['amount'] < 0) {
+      if ($balance['amount'] < 0 && $original_balance > 0) {
         $rows[] = array(
           'data' => array(
             array('data' => t('Change'), 'class' => array('label')),
@@ -441,7 +443,7 @@ function commerce_payment_commerce_pos_balance_summary_row_info($totals, $order)
     if ($order) {
       $order_to_pay_classes = array('order-to-pay');
 
-      if ($balance['amount'] > 0) {
+      if ($balance['amount'] > 0 && $original_balance > 0 || $balance['amount'] < 0 && $original_balance < 0) {
         $order_to_pay_classes[] = 'order-to-pay-positive';
       }
       else {
@@ -463,7 +465,7 @@ function commerce_payment_commerce_pos_balance_summary_row_info($totals, $order)
         'weight' => 10,
       );
 
-      if ($balance['amount'] < 0) {
+      if ($balance['amount'] < 0 & $original_balance > 0) {
         $rows[] = array(
           'data' => array(
             array('data' => t('Change'), 'class' => array('label')),

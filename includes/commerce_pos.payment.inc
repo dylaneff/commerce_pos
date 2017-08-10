@@ -38,13 +38,10 @@ function commerce_pos_payment($form, &$form_state) {
 
   $payment_options = commerce_pos_get_payment_options();
   $form['#theme'] = 'commerce_pos_payment';
-
-  $return = FALSE;
-  if (isset($form_state['transaction'])) {
-    $form_state['transaction']->updateType();
-    $transaction_type = $form_state['transaction']->type;
-    $return = $transaction_type == CommercePosService::TRANSACTION_TYPE_RETURN;
-  }
+  // Make sure we are dealing with the right type of transaction.
+  $form_state['transaction']->updateType();
+  $transaction_type = $form_state['transaction']->type;
+  $return = $transaction_type == CommercePosService::TRANSACTION_TYPE_RETURN;
 
   $form['#prefix'] = '<div id="' . $wrapper_id . '" class="' . ($return ? 'return' : 'sale') . '">';
   $form['#suffix'] = '</div>';
@@ -117,6 +114,11 @@ function commerce_pos_payment($form, &$form_state) {
       'effect' => 'fade',
     );
 
+    // We need to prevent remaining negative balances when were are doing a
+    // refund. Otherwise we give change back to the customer.
+    $original_balance = $form_state['order_wrapper']->commerce_order_total->amount->value();
+    $balance_paid = ($original_balance <= 0 && $order_balance['amount'] == 0) || ($original_balance > 0 && $order_balance['amount'] <= 0);
+
     foreach ($payment_options as $payment_option) {
       $form['payment_options'][$payment_option['id']] = array(
         '#type' => 'button',
@@ -124,7 +126,7 @@ function commerce_pos_payment($form, &$form_state) {
         '#name' => 'commerce-pos-payment-option-' . $payment_option['id'],
         '#ajax' => $payment_ajax,
         '#payment_option_id' => $payment_option['id'],
-        '#disabled' => $order_balance['amount'] == 0,
+        '#disabled' => $balance_paid,
         '#limit_validation_errors' => array(),
       );
     }
@@ -145,7 +147,7 @@ function commerce_pos_payment($form, &$form_state) {
     if (!empty($form_state['triggering_element']['#payment_option_id'])) {
       $option_id = $form_state['triggering_element']['#payment_option_id'];
 
-      if ($option_id == 'commerce_pos_payment_cash' && $transaction_type == 'sale') {
+      if ($option_id == 'commerce_pos_payment_cash' && $order_balance['amount'] > 0) {
 
         $form['keypad']['quick_pay'] = array(
           '#type' => 'container',
@@ -260,7 +262,7 @@ function commerce_pos_payment($form, &$form_state) {
     $form['balance']['actions']['finish'] = array(
       '#type' => 'submit',
       '#value' => t('Finish'),
-      '#disabled' => $order_balance['amount'] != 0,
+      '#disabled' => !$balance_paid,
       '#validate' => array('commerce_pos_payment_validate'),
       '#submit' => array('commerce_pos_payment_finish'),
       '#attributes' => array(
