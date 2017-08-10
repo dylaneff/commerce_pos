@@ -874,10 +874,27 @@ function commerce_pos_report_build_journal_role_table(array $filters = array()) 
   ));
 
   // Join line item data.
-  $sale_line_items = commerce_pos_sale_product_line_item_types();
   $query->join('commerce_line_item', 'l', 'l.order_id = t.order_id');
-  $query->addExpression('SUM(CASE WHEN l.type = \'commerce_pos_return\' THEN l.quantity ELSE null END)', 'return_count');
-  $query->addExpression('SUM(CASE WHEN l.type IN (\'' . implode('\', \'', $sale_line_items) . '\') THEN l.quantity ELSE null END)', 'purchase_count');
+  // Need to grab the return and sale quantities from subqueries otherwise
+  // we will have duplicates for orders with multiple payments.
+  $sale_line_items = commerce_pos_sale_product_line_item_types();
+  $sub_query = db_select('commerce_line_item', 'rli');
+  $sub_query->fields('rli', array('quantity', 'order_id', 'line_item_id'));
+  $sub_query->condition('rli.type', 'commerce_pos_return');
+  $sub_query->addExpression('SUM(rli.quantity)', 'return_count');
+  $sub_query->groupBy('rli.order_id');
+
+  $query->addJoin('LEFT OUTER', $sub_query, 'rli', 'rli.order_id = t.order_id');
+  $query->addField('rli', 'return_count', 'return_count');
+
+  $sub_query = db_select('commerce_line_item', 'pli');
+  $sub_query->fields('pli', array('quantity', 'order_id', 'line_item_id'));
+  $sub_query->condition('pli.type', $sale_line_items, 'IN');
+  $sub_query->addExpression('SUM(pli.quantity)', 'purchase_count');
+  $sub_query->groupBy('pli.order_id');
+
+  $query->addJoin('LEFT OUTER', $sub_query, 'pli', 'pli.order_id = t.order_id');
+  $query->addField('pli', 'purchase_count', 'purchase_count');
 
   // Get the totals for each payment type.
   foreach ($active_payment_methods as $key => $payment_method) {
@@ -1138,13 +1155,27 @@ function commerce_pos_report_build_sales_report_table(array $filters = array()) 
   ));
 
   // Join line item data.
-  $sale_line_items = commerce_pos_sale_product_line_item_types();
   $query->join('commerce_line_item', 'l', 'l.order_id = t.order_id');
-  $query->addExpression('SUM(CASE WHEN l.type = \'commerce_pos_return\' THEN l.quantity ELSE null END)', 'return_count');
-  $query->addExpression('SUM(CASE WHEN l.type IN (\'' . implode('\', \'', $sale_line_items) . '\') THEN l.quantity ELSE null END)', 'purchase_count');
+  // Need to grab the return and sale quantities from subqueries otherwise
+  // we will have duplicates for orders with multiple payments.
+  $sale_line_items = commerce_pos_sale_product_line_item_types();
+  $sub_query = db_select('commerce_line_item', 'rli');
+  $sub_query->fields('rli', array('quantity', 'order_id', 'line_item_id'));
+  $sub_query->condition('rli.type', 'commerce_pos_return');
+  $sub_query->addExpression('SUM(rli.quantity)', 'return_count');
+  $sub_query->groupBy('rli.order_id');
 
-  $line_item_types = commerce_product_line_item_types();
-  $query->condition('l.type', $line_item_types, 'IN');
+  $query->addJoin('LEFT OUTER', $sub_query, 'rli', 'rli.order_id = t.order_id');
+  $query->addField('rli', 'return_count', 'return_count');
+
+  $sub_query = db_select('commerce_line_item', 'pli');
+  $sub_query->fields('pli', array('quantity', 'order_id', 'line_item_id'));
+  $sub_query->condition('pli.type', $sale_line_items, 'IN');
+  $sub_query->addExpression('SUM(pli.quantity)', 'purchase_count');
+  $sub_query->groupBy('pli.order_id');
+
+  $query->addJoin('LEFT OUTER', $sub_query, 'pli', 'pli.order_id = t.order_id');
+  $query->addField('pli', 'purchase_count', 'purchase_count');
 
   // Make sure line item count is aggregated.
   $query->groupBy('l.order_id');
