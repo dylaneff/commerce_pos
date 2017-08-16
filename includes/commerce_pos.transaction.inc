@@ -828,7 +828,6 @@ function commerce_pos_return_select_item_popup(&$form, &$form_state, $order) {
     '#type' => 'checkboxes',
     '#options' => $options,
     '#weight' => 0,
-    '#validated' => TRUE,
     '#prefix' => '<h2 id="commerce-pos-return-item-title">' . t('Select the items being returned') . '</h2>' . l(t('Select All'), NULL, array(
       'external' => TRUE,
       'fragment' => FALSE,
