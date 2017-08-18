@@ -52,7 +52,7 @@ class CommercePosDiscountService {
    * @return array|bool
    *   The price component, or FALSE if none was found.
    */
-  public static function getCommerceDiscountComponents(EntityMetadataWrapper $price_wrapper, $order_wrapper) {
+  public static function getCommerceDiscountComponents(EntityMetadataWrapper $price_wrapper, EntityMetadataWrapper $order_wrapper) {
     $data = (array) $price_wrapper->data->value() + array('components' => array());
     $components = array();
     // Look for our discount in each of the price components.
@@ -578,7 +578,7 @@ class CommercePosDiscountService {
    */
   public static function discountGrantedByCoupon(EntityMetadataWrapper $order_wrapper, $discount_name) {
     if (isset($order_wrapper->commerce_coupons)) {
-      foreach($order_wrapper->commerce_coupons as $coupon) {
+      foreach ($order_wrapper->commerce_coupons as $coupon) {
         if (commerce_coupon_coupon_has_discount($coupon, $discount_name)) {
           return $coupon->value();
         }

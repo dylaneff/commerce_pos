@@ -160,8 +160,6 @@ class CommercePosDiscountBase extends CommercePosTransactionBase implements Comm
    *
    * @param EntityMetadataWrapper $line_item_wrapper
    *   The line item to check for the specified discount.
-   * @param string $discount_name
-   *   The discount to check against the line item.
    *
    * @return array
    *   Data of the line item discount, will default to blank if can't be found.
