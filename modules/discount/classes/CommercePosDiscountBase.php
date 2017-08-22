@@ -232,6 +232,8 @@ class CommercePosDiscountBase extends CommercePosTransactionBase implements Comm
         $line_item_wrapper->save();
       }
       $this->transaction->invokeEvent('lineItemUpdated');
+      // Re-add all applicable discount price components and/or line items.
+      rules_invoke_event('commerce_discount_order', $order_wrapper);
     }
   }
 
