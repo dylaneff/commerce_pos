@@ -224,14 +224,27 @@ class CommercePosDiscountBase extends CommercePosTransactionBase implements Comm
     else {
       // Need to invoke the calculate sell price event for coupons to appear on
       // any elligible line items.
-      foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
+      foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
         $line_item = $line_item_wrapper->value();
+        // Remove discount line items, they will be added again later.
+        if ($line_item->type == 'commerce_discount') {
+          $order_wrapper->commerce_line_items->offsetUnset($delta);
+          continue;
+        }
         rules_invoke_all('commerce_product_calculate_sell_price', $line_item);
-
         CommercePosDiscountService::updateLineItemTotal($line_item_wrapper);
         $line_item_wrapper->save();
       }
       $this->transaction->invokeEvent('lineItemUpdated');
+      // Remove all applicable discount components before recalculating them.
+      foreach ($order_wrapper->commerce_discounts as $delta => $discount_wrapper) {
+        $discount_name = $discount_wrapper->name->value();
+        if (CommercePosDiscountService::discountGrantedByCoupon($order_wrapper, $discount_name)) {
+          $order_wrapper->commerce_discounts->offsetUnset($delta);
+          CommercePosDiscountService::removeDiscountComponents($order_wrapper->commerce_order_total, $discount_name);
+        }
+      }
+
       // Re-add all applicable discount price components and/or line items.
       rules_invoke_event('commerce_discount_order', $order_wrapper);
     }
@@ -252,6 +265,11 @@ class CommercePosDiscountBase extends CommercePosTransactionBase implements Comm
         foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
           CommercePosDiscountService::removeDiscountComponents($line_item_wrapper->commerce_unit_price, $discount->name);
           $line_item_wrapper->save();
+        }
+        foreach ($order_wrapper->commerce_discounts as $delta => $discount_wrapper) {
+          if ($discount_wrapper->name->value() == $discount->name) {
+            $order_wrapper->commerce_discounts->offsetUnset($delta);
+          }
         }
         // Remove the discount from the order total.
         CommercePosDiscountService::removeDiscountComponents($order_wrapper->commerce_order_total, $discount->name);
